@@ -1,0 +1,72 @@
+import { Injectable } from '@angular/core';
+import { LoginUser } from '../models/LoginUser';
+import { HttpHeaders, HttpClient } from '@angular/common/http';
+import { JwtHelper, tokenNotExpired } from 'angular2-jwt';
+import { Router } from '@angular/router';
+import { AlertifyService } from './alertify.service';
+import { RegisterUser } from '../models/RegisterUser';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+
+  constructor(
+    private httpClient: HttpClient,
+    private router: Router,
+    private alertifyService: AlertifyService) { }
+
+
+  path = "https://localhost:44340/api/Auth/";
+  userToken: any;
+  decodedToken: any;
+  jwtHepler: JwtHelper = new JwtHelper();
+  TOKEN_KEY = "token"
+
+
+  login(loginUser: LoginUser) {
+    let headers = new HttpHeaders();
+    headers = headers.append("Content-Type", "application/json")
+    this.httpClient
+      .post(this.path + "login", loginUser, { headers: headers })
+      .subscribe(data => {
+        this.saveToken(data),
+          this.userToken = data;
+          this.decodedToken = this.jwtHepler.decodeToken(data.toString()),
+          this.alertifyService.success("Sisteme giriş yapıldı"),
+          this.router.navigateByUrl('/city')
+      })
+  }
+
+  register(registerUser: RegisterUser) {
+    let headers = new HttpHeaders();
+    headers = headers.append("Content-Type", "application/json");
+    this.httpClient
+      .post(this.path + "register", registerUser, { headers: headers })
+      .subscribe(data => {
+
+      })
+  }
+
+  saveToken(token) {
+    localStorage.setItem(this.TOKEN_KEY, token)
+  }
+
+  logOut() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    this.alertifyService.error("Sistemden çıkış yapıldı");
+  }
+
+  loggedIn() {
+    return tokenNotExpired(this.TOKEN_KEY)
+  }
+
+  getCurrentUserId() {
+    return this.jwtHepler.decodeToken(this.token).nameid
+  }
+  get token() {
+    return localStorage.getItem(this.TOKEN_KEY)
+  }
+
+}
